@@ -6,6 +6,10 @@ const app = express();
 //conect to DB
 connectDB();
 
+// Middleware
+// We use expresse's body parser to handle our request bodies
+app.use(express.json({ extended: false }));
+
 app.get('/', (req, res) => {
   res.send(`Api is Running`);
 });
