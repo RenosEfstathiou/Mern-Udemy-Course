@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const ProfileSchema = new mongoose.Schema({
   user: {
-    type: mongoos.Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     red: 'user'
   },
   company: {
