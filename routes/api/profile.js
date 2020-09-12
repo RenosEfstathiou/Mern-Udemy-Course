@@ -4,7 +4,7 @@ const auth = require('../../middleware/auth');
 const { check, validationResult } = require('express-validator');
 // we add the Profile model
 const Profile = require('../../models/Profile');
-const User = require('../../models/Users');
+const User = require('../../models/User');
 
 // we use auth to protect our  route so only if we are logged in we can get our profile (Token)
 
@@ -116,5 +116,58 @@ router.post(
     }
   }
 );
+
+// @route       GET api/profile/
+// @desc        GET all profiles in the db
+// @access      Public
+
+router.get('/', async (req, res) => {
+  try {
+    const profiles = await Profile.find().populate('user', ['name', 'avatar']);
+    res.json(profiles);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route       GET api/profile/user/:user_id
+// @desc        GET users profile using his id
+// @access      Public
+
+router.get('/user/:user_id', async (req, res) => {
+  try {
+    const profile = await Profile.findOne({
+      user: req.params.user_id
+    }).populate('user', ['name', 'avatar']);
+    if (!profile)
+      return res
+        .status(400)
+        .json({ msg: 'There is not a profile for this user ' });
+    res.json(profile);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route       Delete api/profile/
+// @desc        Create or update a user's profile
+// @access      Private since we need authentication
+
+router.delete('/', auth, async (req, res) => {
+  try {
+    // @todo - remove user's posts
+    // remove profile
+    await Profile.findOneAndRemove({ user: req.user.id });
+
+    await User.findOneAndRemove({ _id: req.user.id });
+
+    res.json({ msg: 'User has been deleted' });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send('Server Error');
+  }
+});
 
 module.exports = router;

@@ -8,7 +8,7 @@ const config = require('config');
 const { check, validationResult } = require('express-validator');
 
 // import the user Model - mongoose Schema
-const User = require('../../models/Users');
+const User = require('../../models/User');
 // @route       GET api/users
 // @desc        Register User
 // @access      Public
