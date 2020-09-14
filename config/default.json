@@ -1,4 +1,6 @@
 {
   "mongoURI": "mongodb+srv://RenosEf:renakos1998@cluster0.kp28u.mongodb.net/Cluster0?retryWrites=true&w=majority",
-  "jwtSecret": "tokenSecret"
+  "jwtSecret": "tokenSecret",
+  "gitClientId": "828d2280965870e73751",
+  "gitSecret": "be4ce1edd88b690701a5e7ffeaf8f7d03adbb80c"
 }

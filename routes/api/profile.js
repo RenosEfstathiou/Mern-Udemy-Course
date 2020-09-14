@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../../middleware/auth');
 const { check, validationResult } = require('express-validator');
+const config = require('config');
+const request = require('request');
 // we add the Profile model
 const Profile = require('../../models/Profile');
 const User = require('../../models/User');
@@ -230,9 +232,13 @@ router.delete('/experience/:exp_id', auth, async (req, res) => {
     const removeIndex = profile.experience
       .map(ex => ex.id)
       .indexOf(req.params.exp_id);
-    profile.experience.splice(removeIndex, 1);
-    await profile.save();
-    res.json(profile);
+
+    if (!(removeIndex >= 0)) res.json({ msg: 'Exprerience doesnt exist' });
+    else {
+      profile.experience.splice(removeIndex, 1);
+      await profile.save();
+      res.json(profile);
+    }
   } catch (err) {
     console.log(err.message);
     res.status(500).send('Server Error');
@@ -291,12 +297,44 @@ router.delete('/education/:edu_id', auth, async (req, res) => {
     const removeIndex = profile.education
       .map(ed => ed.id)
       .indexOf(req.params.exp_id);
-    profile.education.splice(removeIndex, 1);
-    await profile.save();
-    res.json(profile);
+    if (!(removeIndex >= 0)) res.json({ msg: 'The education does not exist' });
+    else {
+      profile.education.splice(removeIndex, 1);
+      await profile.save();
+      res.json(profile);
+    }
   } catch (err) {
     console.log(err.message);
     res.status(500).send('Server Error');
   }
 });
+
+// @route    GET api/profile/github/:username
+// @desc     Get users repos from github
+// @access   Public
+
+router.get('/github/:username', (req, res) => {
+  try {
+    const options = {
+      uri: `https://api.github.com/users/${
+        req.params.username
+      }/repos?per_page=5&sort=created:asc&client_id=${config.get(
+        'gitClientId'
+      )}&client_secret=${config.get('gitSecret')}`,
+      method: 'GET',
+      headers: { 'user-agent': 'node.js' }
+    };
+    request(options, (error, response, body) => {
+      if (error) console.log(error);
+      if (response.statusCode !== 200) {
+        res.status(400).json({ msg: 'No Github profile found' });
+      }
+      res.json(JSON.parse(body));
+    });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;
