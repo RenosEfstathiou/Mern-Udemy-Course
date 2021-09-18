@@ -15,6 +15,27 @@ const auth = require('../../middleware/auth');
  * @desc   Test route
  * @access PUBLIC
  */
+router.get('/allu', async (req, res) => {
+  try {
+    const users = await User.find();
+
+    if (!users) {
+      return res.status(400).json({ msg: 'There are no users found' });
+    }
+
+    res.json(users);
+  } catch (err) {
+    console.log(err.message);
+
+    res.status(500).send('Server Error');
+  }
+});
+
+/**
+ * @route  GET api/auth
+ * @desc   Test route
+ * @access PUBLIC
+ */
 router.get('/', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
@@ -22,6 +43,7 @@ router.get('/', auth, async (req, res) => {
     res.json(user);
   } catch (err) {
     console.log(err.message);
+
     res.status(500).send('Server Error');
   }
 });
@@ -89,6 +111,7 @@ router.post(
       );
     } catch (err) {
       console.log(err.message);
+
       return res.status(500).send('Server Error');
     }
   }
