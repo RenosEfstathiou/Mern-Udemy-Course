@@ -33,6 +33,56 @@ router.get('/me', auth, async (req, res) => {
 });
 
 /**
+ * @route  GET api/profiles
+ * @desc   Get/Fetch all profiles
+ * @access PRIVATE
+ */
+router.get('/', auth, async (req, res) => {
+  try {
+    const profiles = await Profile.find({
+      user: { $ne: req.user.id }
+    }).populate('user', ['name']);
+
+    if (!profiles) {
+      return res.status(400).json({ msg: 'There are no profiles available' });
+    }
+
+    res.json(profiles);
+  } catch (err) {
+    console.log(err.message);
+
+    res.status(500).send('Server error');
+  }
+});
+
+/**
+ * @route  GET api/profiles/users/:user_id
+ * @desc   Get/Fetch a user's profile by User Id
+ * @access PRIVATE
+ */
+router.get('/users/:user_id', auth, async (req, res) => {
+  try {
+    const profile = await Profile.findOne({
+      user: req.params.user_id
+    }).populate('user', ['name']);
+
+    if (!profile) {
+      return res.status(400).json({ msg: 'Profile not found' });
+    }
+
+    res.json(profile);
+  } catch (err) {
+    console.log(err.message);
+
+    if (err.kind == 'ObjectId') {
+      return res.status(400).json({ msg: 'Profile not found' });
+    }
+
+    res.status(500).send('Server error');
+  }
+});
+
+/**
  * @route  POST api/profiles/me
  * @desc   POST Create or Update current logged in user's profile
  * @access PRIVATE
@@ -120,5 +170,26 @@ router.post(
     }
   }
 );
+
+/**
+ * @route  Delete api/profiles/
+ * @desc   Delete the current logged in user's data.
+ * @access PRIVATE
+ */
+router.delete('/', auth, async (req, res) => {
+  try {
+    // Remove user's profile
+    await Profile.findOneAndRemove({ user: req.user_id });
+
+    // Remove user
+    await User.findOneAndRemove({ _id: req.user_id });
+
+    res.json({ msg: 'User removed' });
+  } catch (err) {
+    console.error(err.message);
+
+    return res.status(500).send('Server Error');
+  }
+});
 
 module.exports = router;
