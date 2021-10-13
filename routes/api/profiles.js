@@ -145,7 +145,7 @@ router.post(
       let profile = await Profile.findOne({ user: req.user.id });
 
       if (profile) {
-        // *Update profile if profile already exists
+        //*Update profile if profile already exists
 
         profile = await Profile.findOneAndUpdate(
           { user: req.user.id },
@@ -172,6 +172,65 @@ router.post(
 );
 
 /**
+ * @route  PUT api/profiles/experience
+ * @desc   Add profile experience
+ * @access Private
+ */
+router.put(
+  '/experiences',
+  [
+    auth,
+    [
+      check('title', 'Title is required!').not().isEmpty(),
+      check('company', 'Company name is required!').not().isEmpty(),
+      check('from', 'Please enter a valid from date!')
+        .not()
+        .isEmpty()
+        .isISO8601('YYYY-MM-DD')
+    ]
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { title, company, location, from, to, current, description } =
+      req.body;
+
+    const newExperience = {
+      title,
+      company,
+      location,
+      from,
+      to,
+      current,
+      description
+    };
+
+    try {
+      const profile = await Profile.findOne({ user: req.user.id });
+
+      if (!profile) {
+        res.status(400).json({
+          msg: "There was an error proccesing you accont's data please try again later!"
+        });
+      }
+
+      profile.experiences.unshift(newExperience);
+
+      await profile.save();
+
+      res.json(profile);
+    } catch (err) {
+      console.error(err.message);
+
+      return res.status(500).send('Server Error');
+    }
+  }
+);
+
+/**
  * @route  Delete api/profiles/
  * @desc   Delete the current logged in user's data.
  * @access PRIVATE
@@ -184,7 +243,43 @@ router.delete('/', auth, async (req, res) => {
     // Remove user
     await User.findOneAndRemove({ _id: req.user_id });
 
-    res.json({ msg: 'User removed' });
+    //TODO Remove user's posts
+
+    //TODO Remove user's likes
+
+    //TODO Remove user's comments
+
+    res.json({ msg: 'User removed successfully removed!' });
+  } catch (err) {
+    console.error(err.message);
+
+    return res.status(500).send('Server Error');
+  }
+});
+
+/**
+ * @route  Delete api/profiles/experiences/:exp_id
+ * @desc   Delete experience from profile
+ * @access PRIVATE
+ */
+router.delete('/experiences/:exp_id', auth, async (req, res) => {
+  try {
+    let removeIndex = [];
+    let profile = await Profile.findOne({ user: req.user.id });
+
+    if (profile && !profile.experiences.isEmpty) {
+      removeIndex = profile.experiences
+        .map(experience => experience.id)
+        .indexOf(req.params.exp_id);
+    }
+
+    if (!removeIndex.isEmpty) {
+      profile.experiences.splice(removeIndex, 1);
+
+      await profile.save();
+    }
+
+    res.json(profile);
   } catch (err) {
     console.error(err.message);
 
