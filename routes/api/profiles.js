@@ -231,6 +231,66 @@ router.put(
 );
 
 /**
+ * @route  PUT api/profiles/education
+ * @desc   Add profile education
+ * @access Private
+ */
+router.put(
+  '/education',
+  [
+    auth,
+    [
+      check('school', 'School is required!').not().isEmpty(),
+      check('degree', 'Degree is required!').not().isEmpty(),
+      check('fieldofstudy', 'Field of study is required!').not().isEmpty(),
+      check('from', 'Please enter a valid from date!')
+        .not()
+        .isEmpty()
+        .isISO8601('YYYY-MM-DD')
+    ]
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { school, degree, fieldofstudy, from, to, current, description } =
+      req.body;
+
+    const newExperience = {
+      school,
+      degree,
+      fieldofstudy,
+      from,
+      to,
+      current,
+      description
+    };
+
+    try {
+      const profile = await Profile.findOne({ user: req.user.id });
+
+      if (!profile) {
+        res.status(400).json({
+          msg: "There was an error proccesing you accont's data please try again later!"
+        });
+      }
+
+      profile.education.unshift(newExperience);
+
+      await profile.save();
+
+      res.json(profile);
+    } catch (err) {
+      console.error(err.message);
+
+      return res.status(500).send('Server Error');
+    }
+  }
+);
+
+/**
  * @route  Delete api/profiles/
  * @desc   Delete the current logged in user's data.
  * @access PRIVATE
@@ -275,6 +335,36 @@ router.delete('/experiences/:exp_id', auth, async (req, res) => {
 
     if (!removeIndex.isEmpty) {
       profile.experiences.splice(removeIndex, 1);
+
+      await profile.save();
+    }
+
+    res.json(profile);
+  } catch (err) {
+    console.error(err.message);
+
+    return res.status(500).send('Server Error');
+  }
+});
+
+/**
+ * @route  Delete api/profiles/education/:edu_id
+ * @desc   Delete education from profile
+ * @access PRIVATE
+ */
+router.delete('/education/:edu_id', auth, async (req, res) => {
+  try {
+    let removeIndex = [];
+    let profile = await Profile.findOne({ user: req.user.id });
+
+    if (profile && !profile.education.isEmpty) {
+      removeIndex = profile.education
+        .map(experience => experience.id)
+        .indexOf(req.params.edu_id);
+    }
+
+    if (!removeIndex.isEmpty) {
+      profile.education.splice(removeIndex, 1);
 
       await profile.save();
     }
